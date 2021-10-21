@@ -1,0 +1,2 @@
+# VAL3D
+VAL3D est un projet Open Source de viewer 3D Web permettant la consultation de données géographiques 3D et 2D à l’échelle d’un département ou d’une région. Il est aujourd’hui disponible sur GitHub (voir LIENS UTILES). VAL3D s’installe sur un serveur Web Apache et se configure via une base de données MySQL. Il permet de visualiser des données géographiques 2D vecteur et raster (geojson, geoTiff, WMS, WMTS), 2.5D (OSMBuilding) et 3D (terrain, photomaillage, BIM, glTF, …).
