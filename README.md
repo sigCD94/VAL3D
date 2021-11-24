@@ -1,16 +1,12 @@
-# VAL3D
-Documentation VAL3D
-Réalisé par Jules Pierrat – v1.0.0 – 30 Septembre 2021
-SOMMAIRE :
-1.
-2.
-3.
-4.
-Présentation
-Installation
-Configuration
-Utilisation
-1. PRESENTATION :
+# Documentation VAL3D
+*Réalisé par Jules Pierrat – v1.0.0 – 30 Septembre 2021*
+## SOMMAIRE :
+1. [Présentation](#PRESENTATION)
+2. [Installation](#INSTALATION)
+3. [Configuration](#CONFIGURATION)
+4. [Utilisation](#UTILISATION)
+
+## PRESENTATION :
 VAL3D est un projet Open Source de viewer 3D Web permettant la consultation de données géographiques
 3D et 2D à l’échelle d’un département ou d’une région. Il est aujourd’hui disponible sur GitHub (voir LIENS UTILES).
 VAL3D s’installe sur un serveur Web Apache et se configure via une base de données MySQL. Il permet de visualiser
@@ -19,8 +15,8 @@ photomaillage, BIM, glTF, …).
 Je détaillerai les différentes étapes d’installation, de configuration et d’utilisation dans la suite de ce
 document. J’ajouterai également une liste des différentes corrections à apporter sur certains bugs détectés à ce jour
 ainsi que la liste des fonctionnalités intéressantes à développer selon moi.
-2. INSTALLATION :
-2.1. Installation d’un serveur Web Apache et d’une base de données :
+## INSTALLATION :
+### Installation d’un serveur Web Apache et d’une base de données :
 La première étape pour l’installation de Val3D sur votre serveur est de configurer un serveur Web Apache
 (PHP 7.2 ou plus) ainsi qu’une base de données. Il est conseillé d’accéder à cette base de données via une interface
 graphique comme phpMyAdmin pour la suite. Les modules suivants sont conseillés d’être installés :
@@ -78,7 +74,7 @@ Zend
 OPcache
 zip
 zlibNote : Tous ces modules ne sont pas nécessaires, mais étaient installés lors du développement de VAL3D
-2.2. Ajout du projet VAL3D dans le répertoire www :
+### Ajout du projet VAL3D dans le répertoire www :
 Une fois le serveur Web configuré, on peut ajouter le contenu du répertoire GitHub à la racine du serveur
 Web (généralement /var/www/html pour un serveur LAMP). Plusieurs choses sont alors à configurer.
 Le fichier PATH.txt doit contenir le chemin d’accès à la racine du serveur Web (pour le serveur LAMP
@@ -98,7 +94,7 @@ Le fichier sera encrypté dans une future version de VAL3D pour résoudre ce pro
 utilisateur n’aura que des droits limités sur la base de données ce qui réduit les problèmes de sécurité.
 Note : Dans le cas où l’utilisateur renseigné possèderait des droits trop poussés sur la BDD, cela pourrait
 poser quelques soucis. Une solution est de rendre la base de données accessible seulement depuis localhost.
-2.3. Création de la base de données :
+### 2.3. Création de la base de données :
 Dans l’interface phpMyAdmin, il faut créer une nouvelle base de données (par exemple val3d) et y importer
 le fichier SQL présent dans le répertoire bd (/var/www/html/bd/val3d.sql pour un serveur LAMP). On retrouve alors
 les tables suivantes au sein de cette base de données :
@@ -113,14 +109,15 @@ données depuis localhost (exemple : VAL3D_client@localhost) mais qui ne peut ex
 partie 2.2.
 Note : Il est important de vérifier l’encryptage de la base de données car cela peut provoquer des erreurs si elle est
 remplie avec certains caractères comme les accents.
-2.4 Gestion du répertoire data :
+### 2.4 Gestion du répertoire data :
 Le répertoire data (/var/www/html/data) permet de stocker toutes les données géographiques qui ne sont
 pas stockées sur un serveur extérieur. Dans le cas où le volume de données à stocker est très important, il est
 conseillé de déplacer le répertoire data sur une partition permettant de stocker un tel volume. Il suffit alors de créer
 un lien symbolique dans le répertoire souche du serveur web qui pointe sur le nouveau répertoire data.
 Une fois toutes ces étapes réalisées, VAL3D est fonctionnel dans un navigateur Web. On peut retrouver la
 liste de tous les outils sur la gauche mais aucune donnée géographique n’a encore été ajoutée. Nous verrons ce
-point dans la partie configuration (3).3. CONFIGURATION :
+point dans la partie configuration (3).
+## CONFIGURATION :
 Dans cette partie nous allons voir comment ajouter manuellement des données géographiques et les configurer.
 Nous verrons également comment gérer les différents utilisateurs et leurs droits d’accès. Nous verrons comment
 ajouter ou supprimer des plugins et quels utilisateurs y auront accès. Nous verrons comment ajouter des Points of
@@ -128,8 +125,8 @@ Interest (POI) et les configurer. Enfin nous verrons comment paramétrer un proj
 Note : Aujourd’hui, la configuration se fait manuellement et nécessite quelques connaissances en json et la
 gestion de base de données. Dans une future version de VAL3D, cette configuration manuelle compliquée sera
 remplacée par une interface administrateur qui s’occupera de gérer l’ensemble de ces tâches de manière simplifiée.
-3.1 Données géographiques :
-3.1.1 Structure de la table layer
+### Données géographiques :
+#### Structure de la table layer
 La base de données contient une table layer qui permet de décrire l’ensemble des données géographiques
 qu’un utilisateur peut visualiser. Pour le moment, tous les utilisateurs ont accès à toutes les couches de données.
 Dans une future version de l’application, il serait intéressant de gérer les accès à certaines couches en fonction des
@@ -178,7 +175,8 @@ json
 Métadonnées pour configurer en détail la couche
 Elles sont renseignées au format json et spécifiques à chaque type de couche.
 Cet attribut est détaillé dans la suite de cette section pour chaque type de donnée.
-Ex : {‘’WMS‘’ :{},’’style’’ :{}}3.1.2 Photomaillage / 3dtiles :
+Ex : {‘’WMS‘’ :{},’’style’’ :{}}
+#### Photomaillage / 3dtiles :
 Dans cette partie, nous allons voir comment ajouter et configurer un photomaillage. Un photomaillage est
 un fichier au format 3dtiles. Cela signifie qu’il est structuré comme suit :
  Un répertoire Data contenant l’ensemble des tuiles au format .b3dm
@@ -197,7 +195,7 @@ Meta
 Val-de-Marne 3D data/Photomaillage/VM3D/tileset.json
 3dtiles true
 Cartes 3D
-3.1.3 Couche vectorielle 2D surfacique
+#### Couche vectorielle 2D surfacique
 Dans cette partie nous verrons comment ajouter et configurer une couche vectorielle 2D surfacique. Ce
 fichier doit forcément être au format Geojson surfaces et les attributs de cette couche doivent être nommés comme
 ils apparaîtront dans VAL3D. Ce fichier Geojson doit être stocké sur le serveur web ou sur un serveur distant.
@@ -214,7 +212,7 @@ Meta
 2
 Forêts data/Environnement/forets.geojson vectS true
 Environnement *comme ci-dessus
-3.1.3 Couche vectorielle 2D contours
+#### Couche vectorielle 2D contours
 Dans cette partie nous verrons comment ajouter et configurer une couche vectorielle 2D surfacique. Ce
 fichier doit forcément être au format Geojson surfaces et les attributs de cette couche doivent être nommé comme
 ils apparaîtront dans VAL3D. Ce fichier Geojson doit être stocké sur le serveur web ou sur un serveur distant.
@@ -237,20 +235,20 @@ d’affecter un remplissage et un contour à une surface ce qui explique la sép
 sera très utile de fusionner les deux dans une future version de VAL3D afin de simplifier la gestion des couches.
 / ! \ Attention pour le développement futur, Cesium additionne les couleurs lorsque des couches de différentes
 couleurs se superposent. A prendre en compte.
-3.1.4 Couche vectorielle 2D Polylignes :
+#### Couche vectorielle 2D Polylignes :
 Pour le moment, il est impossible d’ajouter des couches vectorielles linéaires dans VAL3D. Cesium ne lit pas
 automatiquement les fichiers Geojson construits sur le modèle linéaire mais l’on pourra s’inspirer du plugin poi.js
 pour faire les traitements manuellement et ajouter des couches linéaires au format Geojson.
-3.1.5 Couche vectorielle 2.5D Volume :
+#### Couche vectorielle 2.5D Volume :
 Pour le moment, il est impossible d’ajouter des volumes à partir de Geojson surface et d’un attribut hauteur.
 Cette fonctionnalité a été entièrement codée et est commentée dans le script VAL3DLayer.js. Cependant, il existe de
 nombreux cas où cette fonctionnalité peut faire crasher l’application et elles ne sont encore pas toute résolues.
 Cependant une grande partie du travail a quand même été réalisée.
-3.1.6 OpenStreetMap Imagery
+#### OpenStreetMap Imagery
 BUG SUR LE SERVEUR VAL3D – à venir
-3.1.7 Geovaldemarne WMS
+#### Geovaldemarne WMS
 BUG SUR LE SERVEUR VAL3D – à venir
-3.1.8 Géoportail Imagery :
+#### Géoportail Imagery :
 Dans cette partie, nous allons voir comment ajouter des flux WMTS Géoportail à notre viewer Cesium. Il faut
 évidemment posséder une clef Géoportail. Pour ajouter ce flux WMTS à VAL3D, il est nécessaire de bien paramétrer
 les attributs Path, Type et Meta dans la table layer.
@@ -272,7 +270,7 @@ Plan
 *comme
 ci-
 dessus
-3.1.9 OSM Building
+#### OSM Building
 Pour ajouter OSM Building, il vous suffit d’ajouter un élément dans la table layer et renseigner l’attribut
 Type avec le mot-clef buildingOSM. Cette couche n’est pas paramétrable. Exemple :
 ID
@@ -285,7 +283,7 @@ Display Groupe
 buildingOSM false
 Bâtiments
 Meta
-3.1.10 Skybox
+#### Skybox
 La skybox est l’image de fond derrière le globe Cesium. Il suffit de fournir le path d’une image au format jpg
 carré et cohérente bord à bord. Une future version de VAL3D pourrait permettre de choisir 6 images différentes et
 de proposer un rendu plus intéressant. Exemple :
@@ -299,7 +297,7 @@ Ciel bleu
 http://unsiteweb/img/bluesky.jpg skybox
 true
 Ciel
-3.1.11 Point of Interest (POI) :
+#### Point of Interest (POI) :
 Les points of Interest ou POI sont la meilleure manière de décrire une donnée géographique ponctuelle.
 L’administrateur de VAL3D pourra personnaliser l’apparence, la position ou même la fiche de description d’un
 élément. Le principe est de cliquer sur un icone géoréférencé dans VAL3D et qu’il ouvre une fenêtre modale au sein
