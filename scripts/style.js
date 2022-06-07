@@ -53,10 +53,29 @@ function openStylesMenu(){
 
   // set the html variable
   var html = '';
-var isFirst = true;
+  var isFirst = true;
+
+  // open 3dtiles group
+  html += '<optgroup label="PHOTOMAILLAGE">';
+
+  // add visible raster layers
+  var n = listeLayers.layers.length;
+  for(var i = 0; i < n ; i++){
+      if (listeLayers.layers[i].isDisplay  && listeLayers.layers[i].type == '3dtiles'){
+          html += '<option value="layer_'+listeLayers.layers[i].id+'"';
+    if (isFirst){
+      isFirst = false;
+      html += ' selected ';
+    }
+    html += '>'+listeLayers.layers[i].nom+'</option>';
+      }
+  }
+
+  // close raster group
+  html += '</optgroup>';
 
   // open raster group
-  html += '<optgroup label="COUCHES RASTER">'
+  html += '<optgroup label="COUCHES RASTER">';
 
   // add visible raster layers
   var n = listeLayers.layers.length;
@@ -105,29 +124,27 @@ selector.addEventListener('change', clickOnSelector);
 * 
 */
 function clickOnSelector(e){
-// get id of the layers
-if(e.target == undefined){
-  var id = parseInt(e.value.split('_')[1]);
-} else {
-  var id = parseInt(e.target.value.split('_')[1]);
-}
+  // get id of the layers
+  if(e.target == undefined){
+    var id = parseInt(e.value.split('_')[1]);
+  } else {
+    var id = parseInt(e.target.value.split('_')[1]);
+  }
 
-// Set the name of the Selector
-if(listeLayers.getLayerById(id) == undefined){
-  document.getElementById('selected_layer_in_style_menu').innerHTML = "Aucune couche visible n'est stylisable"
-} else {
-  document.getElementById('selected_layer_in_style_menu').innerHTML = listeLayers.getLayerById(id).nom;
-}
+  // Set the name of the Selector
+  if(listeLayers.getLayerById(id) == undefined){
+    document.getElementById('selected_layer_in_style_menu').innerHTML = "Aucune couche visible n'est stylisable"
+  } else {
+    document.getElementById('selected_layer_in_style_menu').innerHTML = listeLayers.getLayerById(id).nom;
+  }
 
-// delete the content of the style container
-document.getElementById("style_container").innerHTML = '';
+  // delete the content of the style container
+  document.getElementById("style_container").innerHTML = '';
 
-// Set the new content of the style container
-if(listeLayers.getLayerById(id) != undefined){
-  setStyleContainer(id);
-}
-
-
+  // Set the new content of the style container
+  if(listeLayers.getLayerById(id) != undefined){
+    setStyleContainer(id);
+  }
 }
 
 
@@ -184,115 +201,132 @@ function setStyleContainer(id){
 	var container = document.getElementById('style_container');
   container.innerHTML = '';
 
-	// if the layer is a raster
-	if (layer.type.split('imagery').length == 2){
+  // if the layer is a 3dtiles
+	if (layer.type == '3dtiles'){
 		// add opacity manager
-		container.innerHTML += '<h2>Opacité:</h2>';
+		container.innerHTML += '<h2>Luminosité :</h2>';
     container.innerHTML += '<div style="height:2px;background-color:white;"><div>';
     container.innerHTML += '<div style="height:10px;"></div>';
-		container.innerHTML += '<input id="opacity_selector_'+id+'" class="opacity_selector"  type="range" min="0" max="100" value="'+listeLayers.getLayerById(id).getOpacity()*100+'">'
-
-    // add under / on manager
-    container.innerHTML += '<div style="height:30px;"><div>';
-    container.innerHTML += '<h2>Positions:</h2>';
-    container.innerHTML += '<div style="height:2px;background-color:white;"><div>';
-    container.innerHTML += '<div style="height:10px;"></div>';
-    container.innerHTML += '<button id="put_first_'+id+'" class="position_style">Mettre au premier plan</button>';
-    container.innerHTML += '<div style="height:5px;"></div>';
-    container.innerHTML += '<button id="put_last_'+id+'" class="position_style">Mettre au dernier plan</button>';
-
-    // add event listener for opacity
-    document.getElementById('opacity_selector_'+id).addEventListener('change', changeRasterLayerOpacity);
-
-    // add event for first plan
-    document.getElementById('put_first_'+id).addEventListener('click', changeRasterPosition);
-
-    // add event for last plan
-    document.getElementById('put_last_'+id).addEventListener('click', changeRasterPosition);
-		
-
-	// else it is a vector
-	} else {
-    if(layer.type.split('S').length >= 2){
-      // add the param of fill
-      container.innerHTML += '<h2>Contenu:</h2>';
-      container.innerHTML += '<div style="width:100%;height:1px;background-color:white;"></div>'
-      container.innerHTML += '<div style="height:10px;"></div>';
-      // add color fill param
-      var fillColor = layer.getColor();
-      var fcolor = RGBToHex(fillColor.red*255,fillColor.green*255,fillColor.blue*255);
-      container.innerHTML += '<div style="display:flex;"><h3 style="color:white;font-family:Ubuntu;">Couleur: </h3><div style="width:30px;"></div><input id="cfill_selector_'+id+'" class="color_selector" type="color" value="'+fcolor+'"></div>';
-
-      // add fill opacity
-      container.innerHTML += '<div style="display:flex;"><h3 style="color:white;font-family:Ubuntu;">Opacité: </h3><div style="width:30px;"></div><input id="ofill_selector_'+id+'" class="opacity_selector" type="range" min="0" max="100" value="'+fillColor.alpha*100+'"></div>'
-    }
-
-    if (layer.type.split('L').length >= 2){
-      // add the param of fill
-      container.innerHTML += '<h2>Trait:</h2>';
-      container.innerHTML += '<div style="width:100%;height:1px;background-color:white;"></div>'
-      container.innerHTML += '<div style="height:10px;"></div>';
-      // add color stroke param
-      var strokeColor = layer.getColor();
-      var scolor = RGBToHex(strokeColor.red*255,strokeColor.green*255,strokeColor.blue*255);
-      var width = viewer.entities.getById(layer.data.CesiumPolyline[0].id).polyline.width;
-      container.innerHTML += '<div style="display:flex;"><h3 style="color:white;font-family:Ubuntu;">Couleur: </h3><div style="width:30px;"></div><input id="cstroke_selector_'+id+'" class="color_selector" type="color" value="'+scolor+'"></div>';
-
-      // add stroke opacity
-      container.innerHTML += '<div style="display:flex;"><h3 style="color:white;font-family:Ubuntu;">Epaisseur: </h3><div style="width:30px;"></div><input id="width_selector_'+id+'" class="width_selector" type="number" min="1" max="50" value="'+width+'"></div>'
-    }
-
+		container.innerHTML += '<input id="lumix_selector_'+id+'" class="opacity_selector"  type="range" min="0" max="100" value="'+listeLayers.getLayerById(id).lumix*100+'">'
     // add default style
     container.innerHTML += '<div style="height:20px;"></div>';
     container.innerHTML += '<button id="default_style_'+id+'" class="default_style">STYLE PAR DEFAULT</button>';
 
-    // add attribute style
-    container.innerHTML += '<div style="height:10px;"></div>';
-    container.innerHTML += '<button id="attribute_style_'+id+'" class="attribute_style">STYLE PAR ATTRIBUT</button>';
-    container.innerHTML += '<div style="height:20px;"></div>';
+    // add event listener for opacity
+    document.getElementById('lumix_selector_'+id).addEventListener('change', change3DTilesLayerOpacity);
 
-    // add Etiquette text
-    container.innerHTML += '<h2>Etiquettes:</h2>';
-    container.innerHTML += '<div style="width:100%;height:1px;background-color:white;"></div>'
-    container.innerHTML += '<div style="height:10px;"></div>';
+	// else it is a raster or a vector
+	} else {
+    // if the layer is a raster
+    if (layer.type.split('imagery').length == 2){
+      // add opacity manager
+      container.innerHTML += '<h2>Opacité:</h2>';
+      container.innerHTML += '<div style="height:2px;background-color:white;"><div>';
+      container.innerHTML += '<div style="height:10px;"></div>';
+      container.innerHTML += '<input id="opacity_selector_'+id+'" class="opacity_selector"  type="range" min="0" max="100" value="'+listeLayers.getLayerById(id).getOpacity()*100+'">'
 
-    // add Etiquette button
-    var text_button_etiquette = 'Ajouter une étiquette';
-    if (layer.isLabeled) {
-      text_button_etiquette = "Supprimer l'étiquete";
-    }
-    container.innerHTML += '<button id="etiquette_style_'+id+'" class="attribute_style">'+text_button_etiquette+'</button>';
-    container.innerHTML += '<div style="height:20px;"></div>';
+      // add under / on manager
+      container.innerHTML += '<div style="height:30px;"><div>';
+      container.innerHTML += '<h2>Positions:</h2>';
+      container.innerHTML += '<div style="height:2px;background-color:white;"><div>';
+      container.innerHTML += '<div style="height:10px;"></div>';
+      container.innerHTML += '<button id="put_first_'+id+'" class="position_style">Mettre au premier plan</button>';
+      container.innerHTML += '<div style="height:5px;"></div>';
+      container.innerHTML += '<button id="put_last_'+id+'" class="position_style">Mettre au dernier plan</button>';
 
-    // add Legend text
-    container.innerHTML += '<h2>Légende:</h2>';
-    container.innerHTML += '<div style="width:100%;height:1px;background-color:white;"></div>'
-    container.innerHTML += '<div style="height:10px;"></div>';
-    container.innerHTML += '<div style="height:20px;"></div>';
-
-    if(layer.type.split('S').length >= 2){
-      //add event listener for color
-      document.getElementById('cfill_selector_'+id).addEventListener('change' , changeLayerFillColor);
       // add event listener for opacity
-      document.getElementById('ofill_selector_'+id).addEventListener('change', changeVectLayerFillOpacity);
+      document.getElementById('opacity_selector_'+id).addEventListener('change', changeRasterLayerOpacity);
+
+      // add event for first plan
+      document.getElementById('put_first_'+id).addEventListener('click', changeRasterPosition);
+
+      // add event for last plan
+      document.getElementById('put_last_'+id).addEventListener('click', changeRasterPosition);
+      
+
+    // else it is a vector
+    } else {
+      if(layer.type.split('S').length >= 2 || layer.type.split("V").length >= 2){
+        // add the param of fill
+        container.innerHTML += '<h2>Contenu:</h2>';
+        container.innerHTML += '<div style="width:100%;height:1px;background-color:white;"></div>'
+        container.innerHTML += '<div style="height:10px;"></div>';
+        // add color fill param
+        var fillColor = layer.getColor()[0] || layer.getColor();
+        var fcolor = RGBToHex(fillColor.red*255,fillColor.green*255,fillColor.blue*255);
+        container.innerHTML += '<div style="display:flex;"><h3 style="color:white;font-family:Ubuntu;">Couleur: </h3><div style="width:30px;"></div><input id="cfill_selector_'+id+'" class="color_selector" type="color" value="'+fcolor+'"></div>';
+
+        // add fill opacity
+        container.innerHTML += '<div style="display:flex;"><h3 style="color:white;font-family:Ubuntu;">Opacité: </h3><div style="width:30px;"></div><input id="ofill_selector_'+id+'" class="opacity_selector" type="range" min="0" max="100" value="'+fillColor.alpha*100+'"></div>'
+      }
+
+      if (layer.type.split('L').length >= 2 || layer.type.split('C').length >= 2 || layer.type.split('V').length >= 2){
+        // add the param of fill
+        container.innerHTML += '<div style="height:15px;"></div><h2>Trait:</h2>';
+        container.innerHTML += '<div style="width:100%;height:1px;background-color:white;"></div>'
+        container.innerHTML += '<div style="height:10px;"></div>';
+        // add color stroke param
+        var strokeColor = layer.getColor();
+        var scolor = RGBToHex(strokeColor.red*255,strokeColor.green*255,strokeColor.blue*255);
+        var width = layer.data.entities.values[0].polygon.outlineWidth.getValue() || viewer.entities.getById(layer.data.CesiumPolyline[0].id).polyline.width;
+        container.innerHTML += '<div style="display:flex;"><h3 style="color:white;font-family:Ubuntu;">Couleur: </h3><div style="width:30px;"></div><input id="cstroke_selector_'+id+'" class="color_selector" type="color" value="'+scolor+'"></div>';
+
+        // add stroke opacity
+        container.innerHTML += '<div style="display:flex;"><h3 style="color:white;font-family:Ubuntu;">Epaisseur: </h3><div style="width:30px;"></div><input id="width_selector_'+id+'" class="width_selector" type="number" min="1" max="50" value="'+width+'"></div>'
+      }
+
+      // add default style
+      container.innerHTML += '<div style="height:20px;"></div>';
+      container.innerHTML += '<button id="default_style_'+id+'" class="default_style">STYLE PAR DEFAULT</button>';
+
+      // add attribute style
+      container.innerHTML += '<div style="height:10px;"></div>';
+      container.innerHTML += '<button id="attribute_style_'+id+'" class="attribute_style">STYLE PAR ATTRIBUT</button>';
+      container.innerHTML += '<div style="height:20px;"></div>';
+
+      // add Etiquette text
+      container.innerHTML += '<h2>Etiquettes:</h2>';
+      container.innerHTML += '<div style="width:100%;height:1px;background-color:white;"></div>'
+      container.innerHTML += '<div style="height:10px;"></div>';
+
+      // add Etiquette button
+      var text_button_etiquette = 'Ajouter une étiquette';
+      if (layer.isLabeled) {
+        text_button_etiquette = "Supprimer l'étiquete";
+      }
+      container.innerHTML += '<button id="etiquette_style_'+id+'" class="attribute_style">'+text_button_etiquette+'</button>';
+      container.innerHTML += '<div style="height:20px;"></div>';
+
+      // add Legend text
+      container.innerHTML += '<h2>Légende:</h2>';
+      container.innerHTML += '<div style="width:100%;height:1px;background-color:white;"></div>'
+      container.innerHTML += '<div style="height:10px;"></div>';
+      container.innerHTML += '<div style="height:20px;"></div>';
+
+      if(layer.type.split('S').length >= 2 || layer.type.split("V") >= 2){
+        //add event listener for color
+        document.getElementById('cfill_selector_'+id).addEventListener('change' , changeLayerFillColor);
+        // add event listener for opacity
+        document.getElementById('ofill_selector_'+id).addEventListener('change', changevectLayerFillOpacity);
+      }
+
+      if (layer.type.split('L').length >= 2 || layer.type.split('C').length >= 2 ){
+        //add event listener for color
+        document.getElementById('cstroke_selector_'+id).addEventListener('change' , changeLayerStrokeColor);
+        // add event listener for opacity
+        document.getElementById('width_selector_'+id).addEventListener('change', changevectLayerStrokeSize);
+      }
+      
+
+      // add event listener for default style
+      document.getElementById('default_style_'+id).addEventListener('click', setDefaultStyle);
+
+      // add event listener for attribute style
+      document.getElementById('attribute_style_'+id).addEventListener('click', getListOfAttributes);
+
+      // add event for the etiquette button
+      document.getElementById('etiquette_style_'+id).addEventListener('click', manageEtiquette);
     }
-
-    if (layer.type.split('L').length >= 2){
-      //add event listener for color
-      document.getElementById('cstroke_selector_'+id).addEventListener('change' , changeLayerStrokeColor);
-      // add event listener for opacity
-      document.getElementById('width_selector_'+id).addEventListener('change', changeVectLayerStrokeSize);
-    }
-    
-
-    // add event listener for default style
-    document.getElementById('default_style_'+id).addEventListener('click', setDefaultStyle);
-
-    // add event listener for attribute style
-    document.getElementById('attribute_style_'+id).addEventListener('click', getListOfAttributes);
-
-    // add event for the etiquette button
-    document.getElementById('etiquette_style_'+id).addEventListener('click', manageEtiquette);
   }
 }
 
@@ -345,6 +379,7 @@ function changeLayerStrokeColor(e){
   // set color
   for (var i = 0 ; i < layer.data.CesiumPolyline.length ; i++){
       viewer.entities.getById(layer.data.CesiumPolyline[i].id).polyline.material = color;
+      viewer.entities.getById(layer.data.CesiumPolyline[i].id).polygon.outlineColor.setValue(color);
   }
 
   // Update liste
@@ -362,7 +397,7 @@ function changeLayerStrokeColor(e){
  * @param {event} e
  * 
  */
-function changeVectLayerFillOpacity(e){
+function changevectLayerFillOpacity(e){
     // get id of the layer
     var id = parseInt(e.currentTarget.id.split('_')[2]);
     
@@ -393,7 +428,7 @@ function changeVectLayerFillOpacity(e){
  * @param {event} e
  * 
  */
- function changeVectLayerStrokeSize(e){
+ function changevectLayerStrokeSize(e){
   // get id of the layer
   var id = parseInt(e.currentTarget.id.split('_')[2]);
   
@@ -406,6 +441,7 @@ function changeVectLayerFillOpacity(e){
   // set color
   for (var i = 0 ; i < layer.data.CesiumPolyline.length ; i++){
     viewer.entities.getById(layer.data.CesiumPolyline[i].id).polyline.width = width;
+    viewer.entities.getById(layer.data.CesiumPolyline[i].id).polygon.outlineWidth.setValue(width);
   }
 
   // Update liste
@@ -888,4 +924,27 @@ function changeRasterPosition(e){
   if (type == 'last'){
     viewer.imageryLayers.lowerToBottom(viewer.imageryLayers.get(imageryId))
   }
+}
+
+/**
+ * Function that change the lumix of a 3dtiles layer
+ * 
+ * @param {event} e
+ */
+function change3DTilesLayerOpacity(e){
+  // get id of the layer
+  var id = parseInt(e.currentTarget.id.split('_')[2]);
+    
+  // get layer
+  var layer = listeLayers.getLayerById(id);
+
+  //set opacity
+  var l = e.currentTarget.value/100;
+
+
+  // Update liste
+  listeLayers.update(layer);
+
+  // Reload scene
+  viewer.scene.requestRender();
 }

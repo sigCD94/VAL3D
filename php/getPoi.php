@@ -1,5 +1,12 @@
 <?php
 
+# start session
+session_start();
+
+# get user group
+$group = $_SESSION['user_group'];
+
+
 # Get Path of VAL3D
 $path = file_get_contents('PATH.txt');
 
@@ -29,7 +36,17 @@ try{
 $r = array();
 $i = 0;
 while($layer = mysqli_fetch_assoc($result)){
-    $r[$i] = $layer;
+    # check access
+    $access = explode(";", $layer['Access']);
+    $accessible = false;
+    foreach($access as $a){
+        if($a == $group){
+            $accessible = true;
+        }
+    }
+    if ($accessible == true){
+        $r[$i] = $layer;
+    }
     $i++;
 }
 

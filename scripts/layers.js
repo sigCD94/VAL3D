@@ -53,33 +53,46 @@ function loadLayersInMenu(){
     var groupes = listeLayers.getAllGroup();
     
     // Create a div for all the categoria
-    for(var i = 0 ; i<groupes.length ; i++){ 
-      var html = "<button id='menu_group_"+i+"' class='menu_group'><h2>"+groupes[i]+"</h2></button><div id='menu_group_container_"+i+"' class='menu_group_container' style='height:0px;display:none;'></div><div style='height:10px;'></div>";
-      document.getElementById('group_container').innerHTML += html;
-  
-        // Add every Layers of this groups
+    for(var i = 0 ; i<groupes.length ; i++){
+        // Check if there if an accessible layer in the group
         var layers_in_group = listeLayers.getLayersByGroup(groupes[i]);
-        for (var j = 0;j < layers_in_group.length ; j++){
-            var cross = 'x';
-            if (!layers_in_group[j].isDisplay){
-                cross = '+';
+        var groupe_access = false;
+        layers_in_group.forEach(l => {
+            if (l.access){
+                groupe_access = true;
             }
-            var html = "<div id='layer_in_menu_"+layers_in_group[j].id+"' class='layer_in_menu'><h2>"+layers_in_group[j].nom+"</h2><button id='layer_in_menu_cross_"+layers_in_group[j].id+"' class='layer_in_menu_cross'><h2 id='layer_in_menu_cross_label_"+layers_in_group[j].id+"'>"+cross+"</h2></button></div><div style='height:5px;'></div>"
-            document.getElementById('menu_group_container_'+i).innerHTML += html;
+        });
 
+        if (groupe_access ) {
+            var html = "<button id='menu_group_"+i+"' class='menu_group'><h2>"+groupes[i]+"</h2></button><div id='menu_group_container_"+i+"' class='menu_group_container' style='height:0px;display:none;'></div><div style='height:10px;'></div>";
+            document.getElementById('group_container').innerHTML += html;
+        
+            // Add every Layers of this groups
+            for (var j = 0;j < layers_in_group.length ; j++){
+                if (layers_in_group[j].access) {
+                    var cross = 'x';
+                    if (!layers_in_group[j].isDisplay){
+                        cross = '+';
+                    }
+                    var html = "<div id='layer_in_menu_"+layers_in_group[j].id+"' class='layer_in_menu'><h2>"+layers_in_group[j].nom+"</h2><button id='layer_in_menu_cross_"+layers_in_group[j].id+"' class='layer_in_menu_cross'><h2 id='layer_in_menu_cross_label_"+layers_in_group[j].id+"'>"+cross+"</h2></button></div><div style='height:5px;'></div>"
+                    document.getElementById('menu_group_container_'+i).innerHTML += html;
+                }
+            }
         }
+        // Add event listenner to group of layer
+        document.querySelectorAll('.menu_group').forEach(a => {
+            a.addEventListener('click' ,  openGroupLayers);
+        });
     }
-    // Add event listenner to group of layer
-	document.querySelectorAll('.menu_group').forEach(a => {
-		a.addEventListener('click' ,  openGroupLayers);
-	});
 
     // Add event listener on click for each layers
     for(var k = 0 ; k < listeLayers.layers.length ; k++){
-        if (listeLayers.layers[k].isDisplay){
-            document.getElementById('layer_in_menu_cross_'+listeLayers.layers[k].id).addEventListener('click', removeLayerFromViewer);
-        } else {
-            document.getElementById('layer_in_menu_cross_'+listeLayers.layers[k].id).addEventListener('click', addLayerToViewer);
+        if (listeLayers.layers[k].access) {
+            if (listeLayers.layers[k].isDisplay){
+                document.getElementById('layer_in_menu_cross_'+listeLayers.layers[k].id).addEventListener('click', removeLayerFromViewer);
+            } else {
+                document.getElementById('layer_in_menu_cross_'+listeLayers.layers[k].id).addEventListener('click', addLayerToViewer);
+            }
         }
     }
 }

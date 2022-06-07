@@ -101,6 +101,18 @@ function POILayer(cfg){
                 
                 }
 
+                // if height relativ
+                if (this.meta.height_relativ != undefined){
+                    for (let i = 0 ; i < this.json_data.length ; i++) {
+                        let poi = this.data.get(i);
+                        let coords = new Cesium.Cartographic.fromCartesian(this.data.get(i).position);
+
+                        getAltiIGN(coords.latitude*180/Math.PI, coords.longitude*180/Math.PI).then(a => {
+                            this.data.get(i).position = new Cesium.Cartesian3.fromDegrees(coords.longitude*180/Math.PI, coords.latitude*180/Math.PI, a.elevations[0] + 42 + this.meta.height_relativ);
+                        });
+                    }
+                }
+
                 // set the displayed value
                 this.displayed = true;
 

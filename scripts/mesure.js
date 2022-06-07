@@ -194,7 +194,6 @@ function getCoordsMeasure(e){
  * 
  */
 function initLinearMeasure(){
-    console.log('ptn');
     // remove event listener
     document.getElementById('mesure_linear_button').removeEventListener('click' , initLinearMeasure);
 
@@ -206,6 +205,7 @@ function initLinearMeasure(){
 
     //Change the MEASURE_MODE VARIABLE
     window.MEASURE_MODE = 'LINEAR';
+    window.MEASURE_MODE_LINEAR = undefined;
 
     // change style
     document.getElementById('mesure_coords_button').style.backgroundColor = "#646464";
@@ -237,13 +237,18 @@ function getLinearMeasure(e){
  * 
  */
 function removeMeasure(){
-    console.log('cc');
     // forEach point
     listeMeasure.Point.forEach(p => {
         p.data.label.destroy();
         p.data.billboard.destroy();
     });
     listeMeasure.Point = [];
+
+    // forEach line
+    listeMeasure.Line.forEach(l => {
+        viewer.entities.remove(l.data);
+    });
+    listeMeasure.Line = [];
 
     // Update legend container
     drawMeasureLegend();
@@ -310,7 +315,20 @@ function drawMeasureLegend(){
     });
 
     // add the linear element
-
+    listeMeasure.Line.forEach(l => {
+        html += '<div id="measure_line_'+l.id+'" style="width:100%;background-color:white;padding:5px;box-sizing: border-box;">';
+        html += '<h3 style="font-family:Ubuntu">Ligne '+(l.id+1)+'</h3>';
+        html += '<p>Longueur horizontale:</p>';
+        html += '<p style="color:#646464">'+calcLong2D(l.points)+' m</p>';
+        html += '<p></p>'
+        html += '<p>Longueur 3D</p>';
+        html += '<p style="color:#646464">'+calcLong3D(l.points)+' m</p>';
+        html += '<p></p>'
+        html += '<p>Denivelé</p>';
+        html += '<p style="color:#646464">'+calcDen(l.points)+' m</p>';
+        html += '</div>';
+        html += '<div style="height:5px;"></div>'
+    });
 
     // add the surfaces element
 
@@ -359,6 +377,38 @@ function drawMeasure(type , id){
         viewer.scene.requestRender();
 
     }
+
+    if (type == "LINE"){
+        // delete old line
+        try {
+            viewer.entities.remove(listeMeasure.Line[id].data);
+        } catch {
+            console.log(listeMeasure.Line[id].data)
+        }
+
+        // create new line
+        var coords = [];
+        listeMeasure.Line[id].points.forEach(c => {
+            coords.push(c.coordsWGS.longitude);
+            coords.push(c.coordsWGS.latitude);
+        });
+
+        var poly = viewer.entities.add({
+            polyline: {
+                positions: Cesium.Cartesian3.fromDegreesArray(coords),
+                width: 2,
+                show: true,
+                clampToGround : true
+            }
+        });
+        var strokecolor = new Cesium.Color(0/255, 100/255, 255/255, 1);
+
+        viewer.entities.getById(poly.id).polyline.material = strokecolor;
+
+        listeMeasure.Line[id].data = poly;
+
+        viewer.scene.requestRender();
+    }
 }
 
 
@@ -375,13 +425,160 @@ function drawMeasure(type , id){
                 getCoordsMeasure(e2);
                 return;
             }
-            // MEASURE LINEAR
+            // MEASURE LINEAR START
             if (window.MEASURE_MODE == 'LINEAR'){
-                console.log('ligne')
+                if (window.MEASURE_MODE_LINEAR == undefined){
+                    console.log('start ligne')
+                    startLine(e2);
+                    window.MEASURE_MODE_LINEAR = "STARTED";
+                    return
+                }
+                if (window.MEASURE_MODE_LINEAR == "STARTED"){
+                    console.log("add point to line");
+                    addPointToLine(e2);
+                    if (e2.ctrlKey){
+                        console.log("END");
+                        window.MEASURE_MODE_LINEAR = undefined;
+                        drawMeasureLegend();
+                    }
+                    return;
+                }
                 return;
             }
         }
     } , {
         once: true
     });
+}
+
+
+function startLine(e) {
+    // get the position of the clic
+    var clickPosition = new Cesium.Cartesian2(e.offsetX , e.offsetY);
+
+    // get the position in 3D
+    try{
+        var coords = viewer.scene.pickPosition(clickPosition);
+
+
+        // transform to Geographic
+        coords = Cesium.Cartographic.fromCartesian(coords);
+        console.log(coords)
+
+        // if the point is not at the good place
+        if(coords.height > -1000 && coords.height < 10000){
+            // transform to L93
+            var coords2 = WGSToL93(coords.longitude*180/Math.PI , coords.latitude*180/Math.PI)
+            
+            // add the new measure to the liste of measure
+            var line = {
+                id: listeMeasure.Line.length,
+                points: [{
+                    id: 0,
+                    coordsWGS: {
+                        longitude: coords.longitude*180/Math.PI,
+                        latitude: coords.latitude*180/Math.PI,
+                        height: coords.height
+                    },
+                    coordsL93:{
+                        east: coords2[0],
+                        north: coords2[1],
+                        altitude: 0 
+                    },
+                }],
+                data:{}
+            };
+            listeMeasure.Line.push(line);
+
+            // draw the object
+            //drawMeasure('LINE' , line.id);
+            console.log(listeMeasure.Line[listeMeasure.Line.length - 1]);
+
+
+        }
+        
+    } catch {
+        console.log("error")
+    }
+}
+
+function addPointToLine(e) {
+    // get the position of the clic
+    var clickPosition = new Cesium.Cartesian2(e.offsetX , e.offsetY);
+
+    // get the position in 3D
+    try{
+        var coords = viewer.scene.pickPosition(clickPosition);
+        console.log(listeMeasure);
+
+        // transform to Geographic
+        coords = Cesium.Cartographic.fromCartesian(coords);
+        console.log(coords)
+
+        // if the point is not at the good place
+        if(coords.height > -1000 && coords.height < 10000){
+            // transform to L93
+            var coords2 = WGSToL93(coords.longitude*180/Math.PI , coords.latitude*180/Math.PI)
+            
+            // add the new measure to the liste of measure
+            var point = {
+                id: listeMeasure.Line[listeMeasure.Line.length-1].points.length,
+                coordsWGS: {
+                    longitude: coords.longitude*180/Math.PI,
+                    latitude: coords.latitude*180/Math.PI,
+                    height: coords.height
+                },
+                coordsL93:{
+                    east: coords2[0],
+                    north: coords2[1],
+                    altitude: 0 
+                }
+            };
+            listeMeasure.Line[listeMeasure.Line.length - 1].points.push(point);
+
+            console.log(listeMeasure.Line[listeMeasure.Line.length - 1]);
+
+            // draw the object
+            drawMeasure('LINE' , listeMeasure.Line.length -1);
+
+            // reload legend container
+            //drawMeasureLegend();
+
+        }
+        
+    } catch {
+        console.log("error")
+    }
+}
+
+function calcLong2D(array){
+    var l = 0;
+    for (var i = 0 ; i < array.length - 1 ; i++){
+        var de = array[i+1].coordsL93.east - array[i].coordsL93.east;
+        var dn = array[i+1].coordsL93.north - array[i].coordsL93.north;
+        var dl = Math.sqrt(de**2 + dn**2);
+        l += dl;
+    }
+    return l;
+}
+
+function calcLong3D(array){
+    var l = 0;
+    for (var i = 0 ; i < array.length - 1 ; i++){
+        var de = array[i+1].coordsL93.east - array[i].coordsL93.east;
+        var dn = array[i+1].coordsL93.north - array[i].coordsL93.north;
+        var dh = array[i+1].coordsWGS.height - array[i].coordsWGS.height;
+        var dl = Math.sqrt(de**2 + dn**2 + dh**2);
+        l += dl;
+    }
+    return l;
+}
+
+function calcDen(array){
+    var d = 0;
+    for (var i = 0 ; i < array.length - 1 ; i++){
+        var dh = array[i+1].coordsWGS.height - array[i].coordsWGS.height;
+        d += dh;
+    }
+    return d;
 }

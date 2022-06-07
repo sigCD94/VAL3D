@@ -24,10 +24,13 @@ function openGeocoderMenu(){
 	document.getElementById('div_geocoder_menu').style.display = 'block';
 
     // We add the content
-    document.getElementById('div_geocoder_menu').innerHTML = "<div style='width:100%;height:auto;display:flex;overflow:auto;'><div style='width:20px;'></div><div style='width:100%;height:auto;overflow:auto;'><h3 style='color:white;font-family:Ubuntu;'>Adresse:</h3><input type='text' id='adress_geocoder_input' class='geocoder_input'><div style='height:15px;'></div><h3 style='color:white;font-family:Ubuntu;'>Ville:</h3><input type='text' id='city_geocoder_input' class='geocoder_input'><div style='height:15px;'></div><h3 style='color:white;font-family:Ubuntu;'>Code postal:</h3><input type='text' id='code_geocoder_input' class='geocoder_input'><div style='height:30px;'></div><button id='search_geocoder_button'><h3>RECHERCHER</h3></button><div style='height:10px;'></div><div style='width:100%;display:flex;'><p id='status_geocoder_text' style='margin:auto;'></p></div><div style='height:30px;'></div><h3 style='color:white;font-family:Ubuntu;'>Marqueurs placés:</h3><div style='height:10px;'></div><div id='search_marker_container' style='height:auto;width:auto;'></div></div><div style='width:20px;'></div></div>";
+    document.getElementById('div_geocoder_menu').innerHTML = "<div style='width:100%;height:auto;display:flex;overflow:auto;'><div style='width:20px;'></div><div style='width:100%;height:auto;overflow:auto;'><h3 style='color:white;font-family:Ubuntu;'>Adresse:</h3><input type='text' id='adress_geocoder_input' class='geocoder_input'><div style='height:15px;'></div><h3 style='color:white;font-family:Ubuntu;'>Ville:</h3><input type='text' id='city_geocoder_input' class='geocoder_input'><div style='height:30px;'></div><button id='search_geocoder_button'><h3>RECHERCHER</h3></button><div style='height:10px;'></div><div style='width:100%;display:flex;'><p id='status_geocoder_text' style='margin:auto;'></p></div><div style='height:30px;'></div><h3 style='color:white;font-family:Ubuntu;'>Marqueurs placés:</h3><div style='height:10px;'></div><div id='search_marker_container' style='height:auto;width:auto;'></div></div><div style='width:20px;'></div></div>";
 
 	// We add the event for research
 	document.getElementById('search_geocoder_button').addEventListener('click' , searchLocation)
+
+    // Load the search marker
+    addMarkerGeocoder();
 
 	// We set the variable Opened Menu
 	window.OPENED_MENU = 'Geocoder';
@@ -46,11 +49,9 @@ function searchLocation(){
     var adress = document.getElementById('adress_geocoder_input').value;
     // get city
     var city = document.getElementById('city_geocoder_input').value;
-    // get code
-    var code = document.getElementById('code_geocoder_input').value;
 
     // ask geocoder data . gouv
-    fetch("https://api-adresse.data.gouv.fr/search/?q="+adress+"+"+city+"&postcode="+code)
+    fetch("https://api-adresse.data.gouv.fr/search/?q="+adress+"+"+city)
     .then(a => a.json())
     .then(a => {
         // get the data
@@ -77,7 +78,6 @@ function searchLocation(){
                 // remove input value
                 document.getElementById('adress_geocoder_input').value = '';
                 document.getElementById('city_geocoder_input').value = '';
-                document.getElementById('code_geocoder_input').value = '';
 
                 // convert coords in WGS84
                 var coords = lambert93toWGPS(data.x, data.y);
@@ -100,30 +100,19 @@ function searchLocation(){
 
                 layerPoi.data.get(id).ID = id;
                 layerPoi.data.get(id).NAME = data.label;
-
-                // add the marker in the liste
-                var html = "<div id='search_marker_container_"+id+"' style='width:100%;height:55px;'>"
-                html += "<div style='width:100%;height:50px;display:flex;'>"
-                html += "<div id='search_marker_container_fly_"+id+"' class='search_marker_container_fly' onclick=''><h3>"+data.label+"</h3></div>";
-                html += "<div id='search_marker_container_del_"+id+"' class='search_marker_container_del'><h3>X</h3></div>";
-                html += "</div>"
-                html += "<div style='height:5px;'></div>";
-                html += "</div>"
-                document.getElementById('search_marker_container').innerHTML += html;
-
-                // add event listener on this marker
-                document.getElementById('search_marker_container_fly_'+id).setAttribute('onclick' , 'geocoderFlyTo('+id+');');
-                document.getElementById('search_marker_container_del_'+id).setAttribute('onclick' , 'geocoderDelMarker('+id+');')
                 
                 // We modify the alt of the POI
                 getAltiIGN(coords.latitude , coords.longitude).then(a => {
-                    var h = a.elevations[0] + 45 + 35;
+                    var h = a.elevations[0] + 42 + 10;
                     // update height of the poi
                     listePOIs.getLayerById(0).getPoiById(id).position = Cesium.Cartesian3.fromDegrees(coords.longitude , coords.latitude , h);
                     
                     // move the camera
                     geocoderFlyTo(id);
                 });
+
+                // add the marker and event to the list
+                addMarkerGeocoder();
                 
             }
         }
@@ -171,4 +160,31 @@ function geocoderDelMarker(id){
 
     // update
     viewer.scene.requestRender();
+}
+
+function addMarkerGeocoder() {
+    // init html
+    document.getElementById('search_marker_container').innerHTML = '';
+
+    // get POI layer
+    var layerPoi = listePOIs.getLayerById(0);
+
+    // For every search marker
+    for(var i = 0 ; i < layerPoi.data.length ; i++){
+        var poi = layerPoi.data.get(i);
+
+        // html
+        var html = "<div id='search_marker_container_"+poi.ID+"' style='width:100%;height:55px;'>"
+        html += "<div style='width:100%;height:50px;display:flex;'>"
+        html += "<div id='search_marker_container_fly_"+poi.ID+"' class='search_marker_container_fly' onclick=''><h3>"+poi.NAME+"</h3></div>";
+        html += "<div id='search_marker_container_del_"+poi.ID+"' class='search_marker_container_del'><h3>X</h3></div>";
+        html += "</div>"
+        html += "<div style='height:5px;'></div>";
+        html += "</div>"
+        document.getElementById('search_marker_container').innerHTML += html;
+
+        // add event listener on this marker
+        document.getElementById('search_marker_container_fly_'+poi.ID).setAttribute('onclick' , 'geocoderFlyTo('+poi.ID+');');
+        document.getElementById('search_marker_container_del_'+poi.ID).setAttribute('onclick' , 'geocoderDelMarker('+poi.ID+');')
+    }
 }

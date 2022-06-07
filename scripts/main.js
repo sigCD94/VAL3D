@@ -42,6 +42,9 @@ function initPage(){
 
   // TERRAIN
   viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
+  viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
+    url: Cesium.IonResource.fromAssetId(1),
+  });
 
   // Fly the camera to San Francisco at the given longitude, latitude, and height.
   viewer.camera.flyTo({
@@ -54,7 +57,7 @@ function initPage(){
 
   // Delete globe
   viewer.scene.scene3DOnly = true;
-  viewer.scene.globe.depthTestAgainstTerrain = true;
+  viewer.scene.globe.depthTestAgainstTerrain = false;
   viewer.imageryLayers.removeAll()
   viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#AB9B8B').withAlpha(0.4);
   viewer.scene.fog.enable = true;
@@ -129,6 +132,7 @@ var listeMeasure = {
   Line:[],
   Area:[]
 };
+var new_line_buffer = [];
 var clickViewerNoMove;
 
 // EMPRISE DU VAL DE MARNE
@@ -136,15 +140,6 @@ var west = 2.3060611*Math.PI/180;
 var east = 2.618337361*Math.PI/180;
 var north = 48.863364561*Math.PI/180;
 var south = 48.685819377*Math.PI/180;
-
-// Imagery displayed
-var nbImageryDisplayed = 0;
-
-// Clef geoportail
-var key_geoportail;
-fetch('conf/clef_geoportail.txt').then(a => a.text()).then(a => {
-  key_geoportail = a;
-});
 
 // RAYON DE LA TERRE (m)
 var RAYON_TERRE = 6380000;

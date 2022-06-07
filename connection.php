@@ -15,7 +15,7 @@
     mysqli_select_db($link , $db);
 
     # We create request
-    $sql = "select class from users where email = '".$_POST['email']."' and password = '".$_POST['psw']."' limit 1";
+    $sql = "select class from users where email = '".$_POST['email']."' and password = '".hash("sha256", hash('sha256', $_POST['psw']))."' limit 1";
 
     #We make the request
     try{

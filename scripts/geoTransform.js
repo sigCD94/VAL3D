@@ -55,7 +55,7 @@ function lambert93toWGPS(lambertE, lambertN) {
  */
 function getAltiIGN(lat , lon){
     var result  = false;
-    result = fetch('https://wxs.ign.fr/mzlfqya412sbel1kzydo7ze2/alti/rest/elevation.json?lon='+lon+'&lat='+lat+'&zonly=true').then(a => a.json());
+    result = fetch('https://wxs.ign.fr/calcul/alti/rest/elevation.json?lon='+lon+'&lat='+lat+'&zonly=true').then(a => a.json());
     return result;
 }
 

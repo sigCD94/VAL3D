@@ -1,19 +1,19 @@
-function LayersGroup (){
+function LayersGroup() {
     // attribute constructor
     this.layers = [];
 
     // METHOD
     // Add layer to group
-    this.add = function( lyr ){
+    this.add = function (lyr) {
         this.layers.push(lyr);
     }
 
     // Get all the categorie of layers
-    this.getAllGroup = function(){
+    this.getAllGroup = function () {
         var groups = [];
         var n = this.layers.length;
-        for(var i = 0 ; i < n ; i++){
-            if(groups.indexOf(this.layers[i].group) == -1){
+        for (var i = 0; i < n; i++) {
+            if (groups.indexOf(this.layers[i].group) == -1) {
                 groups.push(this.layers[i].group)
             }
         }
@@ -21,21 +21,21 @@ function LayersGroup (){
     }
 
     // Get a layers by it id
-    this.getLayerById = function(id){
+    this.getLayerById = function (id) {
         var n = this.layers.length;
-        for(var i = 0 ; i < n ; i++){
-            if (this.layers[i].id == id){
+        for (var i = 0; i < n; i++) {
+            if (this.layers[i].id == id) {
                 return this.layers[i];
             }
         }
     }
 
     // get layers by groups
-    this.getLayersByGroup = function(group_name){
+    this.getLayersByGroup = function (group_name) {
         var n = this.layers.length;
         var liste_to_return = [];
-        for(var i = 0; i < n ; i++){
-            if(this.layers[i].group == group_name){
+        for (var i = 0; i < n; i++) {
+            if (this.layers[i].group == group_name) {
                 liste_to_return.push(this.layers[i]);
             }
         }
@@ -43,9 +43,9 @@ function LayersGroup (){
     }
 
     // update one layer of the list
-    this.update = function(layer){
+    this.update = function (layer) {
         var id = this.layers.indexOf(this.getLayerById(layer.id));
-        if (id != -1){
+        if (id != -1) {
             this.layers[id] = layer;
         }
     }
@@ -61,15 +61,19 @@ function LayersGroup (){
 
 
 
-function Val3DLayer (cfg){
+function Val3DLayer(cfg) {
     // Attribute Constructor
     this.id = parseInt(cfg['ID']);
     this.nom = cfg['Name'];
-    this.path = cfg['Path'].replace(/\\/gi,'/' );
+    this.path = cfg['Path'].replace(/\\/gi, '/');
     this.type = cfg['Type'];
     this.default_display = cfg['Display'];
     this.group = cfg['Groupe'];
-    if(cfg['Meta'] == ''){
+    this.access = true;
+    if (cfg['Access'] == "NONE;") {
+        this.access = false;
+    }
+    if (cfg['Meta'] == '') {
         this.meta = {};
     } else {
         this.meta = JSON.parse(cfg['Meta']);
@@ -81,6 +85,7 @@ function Val3DLayer (cfg){
     this.isLabeled = false;
     this.labels;
     this.ImageryLayerID;
+    this.lumix;
 
 
     // Methode
@@ -88,18 +93,18 @@ function Val3DLayer (cfg){
      * Function that add the layer to the cesium viewer
      * 
      */
-    this.construct = function(){
+    this.construct = function () {
         // 3D TILES
-        if (this.type == '3dtiles'){
+        if (this.type == '3dtiles') {
             this.data = new Cesium.Cesium3DTileset({
                 url: this.path,
-                maximumScreenSpaceError : 1,
-                maximumNumberOfLoadedTiles : 1000,
-                lightColor : new Cesium.Cartesian3(3,2.8,2.4),
-                imageBasedLightingFactor : new Cesium.Cartesian2(2,2),
-                luminanceAtZenith : 0.5,
-                immediatelyLoadDesiredLevelOfDetail : false,
-                foveatedConeSize : 0.5,
+                maximumScreenSpaceError: 1,
+                maximumNumberOfLoadedTiles: 1000,
+                lightColor: new Cesium.Cartesian3(3, 2.8, 2.4),
+                imageBasedLightingFactor: new Cesium.Cartesian2(2, 2),
+                luminanceAtZenith: 0.5,
+                immediatelyLoadDesiredLevelOfDetail: false,
+                foveatedConeSize: 0.5,
                 skipLevelOfDetail: true
             });
             viewer.scene.primitives.add(this.data);
@@ -110,14 +115,14 @@ function Val3DLayer (cfg){
         }
 
         // GeoJson Surface
-        if (this.type == 'vectS'){
+        if (this.type == 'vectS') {
             var thisLayer = this;
-            Cesium.GeoJsonDataSource.load(this.path , {
+            Cesium.GeoJsonDataSource.load(this.path, {
                 clampToGround: true,
-            }).then(function(geojson){
-                // var p = geojson.entities.values;
+            }).then(function (geojson) {
+                var p = geojson.entities.values;
                 // for (var i = 0; i < p.length; i++) {
-                //     p[i].polygon.extrudedHeight = 200;//geojson.properties.HAUTEUR; // or height property
+                //     p[i].polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
                 // }
                 thisLayer.data = geojson;
                 viewer.dataSources.add(geojson);
@@ -127,15 +132,15 @@ function Val3DLayer (cfg){
                 listeLayers.update(thisLayer);
                 // Reload scene
                 viewer.scene.requestRender();
-                })
+            });
         }
 
         // GeoJson PolyLine
-        if(this.type == 'vectL'){
+        if (this.type == 'vectC') {
             var thisLayer = this;
             fetch(this.path).then(a => a.json()).then(a => {
                 a.CesiumPolyline = [];
-                for(var i = 0 ; i < a.features.length ; i++){
+                for (var i = 0; i < a.features.length; i++) {
                     // transform the positions in an array of cesium cartesian 3
                     new_geom = []
                     a.features[i].geometry.coordinates[0].forEach(p => {
@@ -147,11 +152,11 @@ function Val3DLayer (cfg){
                         positions: Cesium.Cartesian3.fromDegreesArray(new_geom),
                         width: 4,
                         show: true,
-                        clampToGround : true
+                        clampToGround: true
                     }
                     // add it to the viewer
                     var poly2 = viewer.entities.add({
-                        polyline : poly
+                        polyline: poly
                     });
                     // add it to the geojson
                     a.CesiumPolyline.push(poly2)
@@ -168,55 +173,72 @@ function Val3DLayer (cfg){
 
         }
 
-        // Imagery ION
-        if (this.type == 'imageryIon'){
-            // TERRAIN
-            viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
-                url: Cesium.IonResource.fromAssetId(1),
-              });
-            // IMAGERY
-            this.data = viewer.imageryLayers.addImageryProvider(
-                new Cesium.IonImageryProvider({ 
-                    assetId: this.path
-                })
-            );
-            // Update liste
-            listeLayers.update(this);
-            // Reload scene
-            viewer.scene.requestRender();
-            
-            // nbImageryDisplayed
-            nbImageryDisplayed += 1;
+        // Geojson line
+        if (this.type == "vectL") {
+            var thisLayer = this;
+            fetch(this.path).then(a => a.json()).then(a => {
+                a.CesiumPolyline = [];
+                for (var i = 0; i < a.features.length; i++) {
+                    var newgeom = [];
+                    a.features[i].geometry.coordinates.forEach(p => {
+                        newgeom.push(p[0]);
+                        newgeom.push(p[1]);
+                    });
+                    // create a polyline
+                    var poly = {
+                        positions: Cesium.Cartesian3.fromDegreesArray(newgeom),
+                        width: 4,
+                        show: true,
+                        clampToGround: true
+                    }
+                    var poly2 = viewer.entities.add({
+                        polyline: poly
+                    });
+                    // add it to the geojson
+                    a.CesiumPolyline.push(poly2);
+                }
+                // set the val3d object
+                thisLayer.data = a;
+                // Set default style
+                thisLayer.setDefaultStyle();
+                // Update liste
+                listeLayers.update(thisLayer)
+                // Reload scene
+                viewer.scene.requestRender();
+            });
         }
 
-        // Terrain
-
-
-        
-
-        // GeoJson Volume
-        // if (this.type == 'vectV'){
-        //     var geojsonPromise = Cesium.GeoJsonDataSource.load(this.path).then(function(geojson){
-        //         var p = geojson.entities.values;
-        //         for (var i = 0; i < p.length; i++) {
-        //             p[i].polygon.extrudedHeight = geojson.properties.HAUTEUR; // or height property
-        //         }
-        //         viewer.dataSources.add(geojson);
-        //         this.data = geojson;
-        //       })
-        // }
-
-
+        //GeoJson Volume
+        if (this.type == 'vectV') {
+            const meta = this.meta;
+            var thisLayer = this;
+            Cesium.GeoJsonDataSource.load(this.path, {
+                clampToGround: true,
+            }).then(function (geojson) {
+                var p = geojson.entities.values;
+                for (var i = 0; i < p.length; i++) {
+                    p[i].polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+                    p[i].polygon.extrudedHeightReference = Cesium.HeightReference.RELATIVE_TO_GROUND;
+                    p[i].polygon.extrudedHeight = p[i].properties.HAUTEUR || p[i].properties[meta.style.height_field]; // or height property
+                }
+                thisLayer.data = geojson;
+                viewer.dataSources.add(geojson);
+                // Set default style
+                thisLayer.setDefaultStyle();
+                // Update liste
+                listeLayers.update(thisLayer);
+                // Reload scene
+                viewer.scene.requestRender();
+            })
+        }
 
         // OpenStreetMap Imagery
-        if (this.type == 'imageryOsm'){
-            // TERRAIN
-            viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
-                url: Cesium.IonResource.fromAssetId(1),
-              });
+        if (this.type == 'imageryOsm') {
+            console.log("OSM Imagery");
             // IMAGERY
-            this.data = new Cesium.OpenStreetMapImageryProvider({
-                url : 'https://wms.openstreetmap.fr/wms'
+            this.data = new Cesium.TileMapServiceImageryProvider({
+                url: 'https://a.tile.openstreetmap.org/',
+                fileExtension: 'png'
             });
             // Update liste
             listeLayers.update(this);
@@ -227,49 +249,37 @@ function Val3DLayer (cfg){
         }
 
         // Geoportail Imagery
-        if (this.type == 'imageryGeoP'){
-            //TERRAIN
-            viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
-                url: Cesium.IonResource.fromAssetId(1),
-            });
+        if (this.type == 'imageryGeoP') {
             // IMAGERY
             this.data = new Cesium.WebMapTileServiceImageryProvider({
-                url : this.path,
-                layer : this.meta.WMTS.layer || 'ORTHOIMAGERY.ORTHOPHOTOS',
-                style : this.meta.WMTS.style || 'normal',
-                format : this.meta.WMTS.format || 'image/jpeg',
-                tileMatrixSetID : this.meta.WMTS.tileMatrixSetID || 'PM'
+                url: this.path,
+                layer: this.meta.WMTS.layer,
+                style: this.meta.WMTS.style || 'normal',
+                format: this.meta.WMTS.format || 'image/png',
+                tileMatrixSetID: this.meta.WMTS.tileMatrixSetID || 'PM'
             });
             viewer.imageryLayers.addImageryProvider(this.data);
             // Update liste
             listeLayers.update(this);
             // Reload scene
             viewer.scene.requestRender();
-            // nbImageryDisplayed
-            nbImageryDisplayed += 1;
-            this.data.defaultAlpha = 0.2;
-            this.data.defaultAlpha = 0.2;
 
         }
 
         // Geoservice VDM
-        if (this.type == 'imageryVdm'){
-            // TERRAIN
-            viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
-                url: Cesium.IonResource.fromAssetId(1),
-              });
+        if (this.type == 'imageryVdm') {
             // IMAGERY
             this.data = new Cesium.WebMapServiceImageryProvider({
-                url : this.path,
-                layers : this.meta.WMTS.layer || 'CASSINI3',
+                url: this.path,
+                layers: this.meta.WMS.layer || 'CASSINI3',
                 crs: 'EPSG:3857',
                 srs: 'EPSG:3857',
                 tileMatrixSetID: 'CASSINI3-wmsc-10',
                 parameters: {
-                    format: this.meta.WMTS.format || 'image/jpeg',
-                    request: this.meta.WMTS.request || 'GetTile',
-                    styles: this.meta.WMTS.style || "",
-                    version: this.meta.WMTS.version || "1.1.1"
+                    format: this.meta.WMS.format || 'image/jpeg',
+                    request: this.meta.WMS.request || 'GetTile',
+                    styles: this.meta.WMS.style || "",
+                    version: this.meta.WMS.version || "1.1.1"
                 }
             });
             console.log(this.data)
@@ -277,12 +287,10 @@ function Val3DLayer (cfg){
             listeLayers.update(this);
             // Reload scene
             viewer.scene.requestRender();
-            // nbImageryDisplayed
-            nbImageryDisplayed += 1;
         }
 
         // Buildings OSM
-        if(this.type == 'buildingOSM'){
+        if (this.type == 'buildingOSM') {
             this.data = Cesium.createOsmBuildings()
             viewer.scene.primitives.add(this.data);
             // Update list
@@ -292,16 +300,16 @@ function Val3DLayer (cfg){
         }
 
         // Skybox
-        if(this.type == 'skybox'){
+        if (this.type == 'skybox') {
             viewer.skyBox = true;
             viewer.scene.skyBox = new Cesium.SkyBox({
-                sources : {
-                  positiveX : this.path,
-                  negativeX : this.path,
-                  positiveY : this.path,
-                  negativeY : this.path,
-                  positiveZ : this.path,
-                  negativeZ : this.path
+                sources: {
+                    positiveX: this.path,
+                    negativeX: this.path,
+                    positiveY: this.path,
+                    negativeY: this.path,
+                    positiveZ: this.path,
+                    negativeZ: this.path
                 }
             });
             this.data = viewer.scene.skyBox;
@@ -322,79 +330,68 @@ function Val3DLayer (cfg){
      * Function that remove the layer of the map
      * 
      */
-    this.destroy = function(){
+    this.destroy = function () {
         // if the layer isnot display -> quit destroy()
-        if(!this.isDisplay){
+        if (!this.isDisplay) {
             return
         }
         // 3D TILES
-        if (this.type == '3dtiles'){
+        if (this.type == '3dtiles') {
             this.data.destroy();
         }
 
         // GEOJSON surface
-        if (this.type == 'vectS'){
+        if (this.type == 'vectS') {
+            viewer.dataSources.remove(this.data);
+            this.data = undefined;
+        }
+
+        // GEOJSON Volume
+        if (this.type == 'vectV') {
             viewer.dataSources.remove(this.data);
             this.data = undefined;
         }
 
         // GEOJSON line
-        if(this.type == 'vectL'){
-            for(var i = 0 ; i < this.data.CesiumPolyline.length ; i++){
+        if (this.type == 'vectC') {
+            for (var i = 0; i < this.data.CesiumPolyline.length; i++) {
                 viewer.entities.remove(this.data.CesiumPolyline[i]);
             }
             this.data = undefined;
         }
 
-        // ImageryIon
-        if (this.type == 'imageryIon'){
-            // TERRAIN
-            nbImageryDisplayed -= 1;
-            if (nbImageryDisplayed == 0){
-                viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
+        // GEOJSON line
+        if (this.type == 'vectL') {
+            for (var i = 0; i < this.data.CesiumPolyline.length; i++) {
+                viewer.entities.remove(this.data.CesiumPolyline[i]);
             }
-            // IMAGERY
-            viewer.imageryLayers.remove(this.data , true);
+            this.data = undefined;
         }
 
-
-
-
-
         // OpenStreetMap Imagery
-        if (this.type == 'imageryOsm'){
-            // TERRAIN
-            nbImageryDisplayed -= 1;
-            if (nbImageryDisplayed == 0){
-                viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
-            }
+        if (this.type == 'imageryOsm') {
             // IMAGERY
-            viewer.imageryLayers.destroy(this.data , true);
+            viewer.imageryLayers.destroy(this.data, true);
             this.data = undefined;
         }
 
         // geoportail imagery
-        if (this.type == 'imageryGeoP'){
+        if (this.type == 'imageryGeoP') {
             // get imagery provider id
             var imageryId = -1;
-            for(var i = 0 ; i < viewer.imageryLayers._layers.length ; i++){
-                if(viewer.imageryLayers._layers[i].imageryProvider == this.data){
+            for (var i = 0; i < viewer.imageryLayers._layers.length; i++) {
+                if (viewer.imageryLayers._layers[i].imageryProvider == this.data) {
                     imageryId = i;
                 }
             }
-            if(imageryId != -1){
+            if (imageryId != -1) {
                 // IMAGERY
-                viewer.imageryLayers.remove(viewer.imageryLayers.get(imageryId) , false);
-                // TERRAIN
-                nbImageryDisplayed -= 1;
-                if (nbImageryDisplayed == 0){
-                    viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
-                }
-            }            
+                viewer.imageryLayers.remove(viewer.imageryLayers.get(imageryId), false);
+            }
         }
 
         // Buildings OSM
-        if(this.type == 'buildingOSM'){
+        if (this.type == 'buildingOSM') {
             this.data.destroy();
         }
 
@@ -413,7 +410,7 @@ function Val3DLayer (cfg){
 
         // Reload scene
         viewer.scene.requestRender();
-        
+
     }
 
 
@@ -421,15 +418,26 @@ function Val3DLayer (cfg){
      * Function to get the color of the layer if it is a vect
      * 
      */
-    this.getColor = function(){
+    this.getColor = function () {
         // if it is a surface layer
-        if(this.type == ('vectS')){
-            return this.data.entities.values[0].polygon.material.color._value || {red:0,green:0,blue:0,alpha:1};
+        if (this.type == 'vectS') {
+            console.log(this.data.entities);
+            return this.data.entities.values[0].polygon.material.color._value || { red: 0, green: 0, blue: 0, alpha: 1 };
+        }
+
+        if (this.type == 'vectV') {
+            console.log(this.data.entities);
+            return [this.data.entities.values[0].polygon.material.color._value, this.data.entities.values[0].polygon.outlineColor.getValue()] || [{ red: 0, green: 0, blue: 0, alpha: 1 },{ red: 0, green: 0, blue: 0, alpha: 1 }];
         }
 
         // if it s a polyline layer
-        if(this.type == ('vectL')){
-            return viewer.entities.getById(this.data.CesiumPolyline[0].id).polyline.material.color._value || {red:0,green:0,blue:0,alpha:1};
+        if (this.type == ('vectC')) {
+            return viewer.entities.getById(this.data.CesiumPolyline[0].id).polyline.material.color._value || { red: 0, green: 0, blue: 0, alpha: 1 };
+        }
+
+        // if it s a polyline layer
+        if (this.type == ('vectL')) {
+            return viewer.entities.getById(this.data.CesiumPolyline[0].id).polyline.material.color._value || { red: 0, green: 0, blue: 0, alpha: 1 };
         }
 
         // if not
@@ -440,44 +448,85 @@ function Val3DLayer (cfg){
      * Function that set the default style of the layer
      * 
      */
-     this.setDefaultStyle = function(){
+    this.setDefaultStyle = function () {
         // if the layer have a default style
-        if(this.meta != {}){
-            // if it has a unique style
-            if (this.meta.style.type == 'uniq'){  
-
-                if(this.type.split('S').length == 2){
-                    // define fill color
-                    var c =  this.meta.style.fill_color || {red: 255, green: 0, blue: 0, alpha: 0.5}
-                    var fillcolor = new Cesium.Color(c.red/255, c.green/255, c.blue/255, c.alpha);
-
-                    // set fill color
-                    for (var i = 0 ; i < this.data.entities.values.length ; i++){
-                        this.data.entities.values[i].polygon.material = fillcolor;
-                    }
+        if (this.meta != {}) {
+            //3DTILES
+            if (this.type == '3dtiles') {
+                var l = this.meta.style.lumix
+                if (l < 0 || l > 1 || l == undefined) {
+                    l = 0.5
                 }
-                
-                if (this.type.split('L').length == 2){
-                    // define stroke color
-                    var c = this.meta.style.stroke_color || {red: 0, green: 0, blue: 0};
-                    var strokecolor = new Cesium.Color(c.red/255, c.green/255, c.blue/255, 1);
-
-                    // define stroke width
-                    var width = this.meta.style.stroke_width || 2;
-
-                    // set stroke param
-                    for (var i = 0 ; i < this.data.CesiumPolyline.length ; i++){
-                        var p = viewer.entities.getById(this.data.CesiumPolyline[i].id).polyline;
-                        p.material = strokecolor;
-                        p.width = width;
-                    }
-
-                }
-
+                this.lumix = l;
             } else {
-                if(this.meta.type == 'attribut'){
-                    // put random color depending on attribute
-                    setLayerColorAttribute(this.id , this.meta.style.attribut);
+                //RASTER
+                // if it has a unique style
+                if (this.meta.style.type == 'uniq') {
+
+                    if (this.type.split('S').length >= 2 || this.type.split('V') >= 2) {
+                        // define fill color
+                        var c = this.meta.style.fill_color || { red: 255, green: 0, blue: 0, alpha: 0.5 }
+                        var fillcolor = new Cesium.Color(c.red / 255, c.green / 255, c.blue / 255, c.alpha);
+
+                        // set fill color
+                        for (var i = 0; i < this.data.entities.values.length; i++) {
+                            this.data.entities.values[i].polygon.material = fillcolor;
+                        }
+                    }
+
+                    if (this.type.split('V') >= 2) {
+                        // define fill color
+                        var c = this.meta.style.stroke_color || { red: 255, green: 0, blue: 0, alpha: 0.5 }
+                        var strokecolor = new Cesium.Color(c.red / 255, c.green / 255, c.blue / 255, c.alpha);
+                        var width = this.meta.style.stroke_width || 2;
+
+                        // set stroke color
+                        for (var i = 0; i < this.data.entities.values.length; i++) {
+                            this.data.entities.values[i].polygon.outlineColor.setValue(strokecolor);
+                            this.data.entities.values[i].polygon.outlineWidth.setValue(width);
+                        }
+                    }
+
+                    if (this.type.split('C').length >= 2) {
+                        // define stroke color
+                        var c = this.meta.style.stroke_color || { red: 0, green: 0, blue: 0 };
+                        var strokecolor = new Cesium.Color(c.red / 255, c.green / 255, c.blue / 255, 1);
+
+                        // define stroke width
+                        var width = this.meta.style.stroke_width || 2;
+
+                        // set stroke param
+                        for (var i = 0; i < this.data.CesiumPolyline.length; i++) {
+                            var p = viewer.entities.getById(this.data.CesiumPolyline[i].id).polyline;
+                            p.material = strokecolor;
+                            p.width = width;
+                        }
+                    }
+
+                    if (this.type.split('L').length >= 2) {
+                        // define stroke color
+                        var c = this.meta.style.stroke_color || { red: 0, green: 0, blue: 0 };
+                        var strokecolor = new Cesium.Color(c.red / 255, c.green / 255, c.blue / 255, 1);
+
+                        // define stroke width
+                        var width = this.meta.style.stroke_width || 2;
+
+                        // set stroke param
+                        for (var i = 0; i < this.data.CesiumPolyline.length; i++) {
+                            var p = viewer.entities.getById(this.data.CesiumPolyline[i].id).polyline;
+                            p.material = strokecolor;
+                            p.width = width;
+                        }
+                    }
+
+
+
+
+                } else {
+                    if (this.meta.type == 'attribut') {
+                        // put random color depending on attribute
+                        setLayerColorAttribute(this.id, this.meta.style.attribut);
+                    }
                 }
             }
         } else {
@@ -493,61 +542,61 @@ function Val3DLayer (cfg){
      * @param {string} fillColor
      * @param {int} fontSize
      */
-    this.setLabel = function(attribute , fontColor, fillColor , fontSize){
+    this.setLabel = function (attribute, fontColor, fillColor, fontSize) {
         // set a vector height to display text heighter
         var hauteur = 200;
-        var bary = Cesium.Cartesian3.fromDegrees(2.454352 , 48.788833 , 0);
-        var dist = Math.sqrt(bary.x*bary.x + bary.y*bary.y + bary.z * bary.z);
+        var bary = Cesium.Cartesian3.fromDegrees(2.454352, 48.788833, 0);
+        var dist = Math.sqrt(bary.x * bary.x + bary.y * bary.y + bary.z * bary.z);
         var vect = {
-            x: bary.x * hauteur/dist,
-            y: bary.y * hauteur/dist,
-            z: bary.z * hauteur/dist
+            x: bary.x * hauteur / dist,
+            y: bary.y * hauteur / dist,
+            z: bary.z * hauteur / dist
         }
 
-        if (this.type != 'vectL'){
+        if (this.type != 'vectC' && this.type != "vectL") {
             var entities = this.data.entities.values;
-            for (var i = 0; i < entities.length ; i++){
+            for (var i = 0; i < entities.length; i++) {
                 var positions = entities[i].polygon.hierarchy['_value'].positions;
                 var center = Cesium.BoundingSphere.fromPoints(positions).center;
                 center = new Cesium.Cartesian3(center.x + vect.x, center.y + vect.y, center.z + vect.z);
                 entities[i].position = new Cesium.ConstantPositionProperty(center)
                 entities[i].label = new Cesium.LabelGraphics({
                     text: entities[i].properties[attribute].getValue(),
-                    font: fontSize+"px Ubuntu",
+                    font: fontSize + "px Ubuntu",
                     fillColor: fontColor,
-                    outlineWidth : 3,
+                    outlineWidth: 3,
                     outlineColor: fillColor,
-                    style : Cesium.LabelStyle.FILL_AND_OUTLINE,
-                    verticalOrigin : Cesium.VerticalOrigin.BOTTOM,
-                    pixelOffset : new Cesium.Cartesian2(0, 0),
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    pixelOffset: new Cesium.Cartesian2(0, 0),
                     show: true,
                     heigthReference: Cesium.HeightReference.NONE
                 });
             }
         } else {
             var entities = this.data.features;
-            var entities2 = this.data.CesiumPolyline
-            for (var i = 0; i < entities.length ; i++){
+            var entities2 = this.data.CesiumPolyline;
+            for (var i = 0; i < entities.length; i++) {
                 var positions = entities2[i].polyline.positions.getValue();
                 var center = Cesium.BoundingSphere.fromPoints(positions).center;
                 center = new Cesium.Cartesian3(center.x + vect.x, center.y + vect.y, center.z + vect.z);
                 entities2[i].position = new Cesium.ConstantPositionProperty(center)
                 entities2[i].label = new Cesium.LabelGraphics({
                     text: entities[i].properties[attribute],
-                    font: fontSize+"px Ubuntu",
+                    font: fontSize + "px Ubuntu",
                     fillColor: fontColor,
-                    outlineWidth : 3,
+                    outlineWidth: 3,
                     outlineColor: fillColor,
-                    style : Cesium.LabelStyle.FILL_AND_OUTLINE,
-                    verticalOrigin : Cesium.VerticalOrigin.BOTTOM,
-                    pixelOffset : new Cesium.Cartesian2(0, 0),
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    pixelOffset: new Cesium.Cartesian2(0, 0),
                     show: true,
                     heigthReference: Cesium.HeightReference.NONE
                 });
             }
         }
-        
-        
+
+
         // change status of the layer
         this.isLabeled = true;
 
@@ -562,15 +611,15 @@ function Val3DLayer (cfg){
      * Function that delete the label of the layer
      * 
      */
-    this.removeLabel = function(){
+    this.removeLabel = function () {
         // remove labels
-        if(this.type != 'vectL'){
+        if (this.type != 'vectC' && this.type != 'vectL') {
             var entities = this.data.entities.values;
         } else {
             var entities = this.data.CesiumPolyline;
         }
-        
-        for(var i = 0 ; i < entities.length ; i++){
+
+        for (var i = 0; i < entities.length; i++) {
             entities[i].label = undefined;
         }
 
@@ -590,15 +639,15 @@ function Val3DLayer (cfg){
      * Function that return the opacity of a layer
      * 
      */
-    this.getOpacity = function(){
-        if (this.type.split('imagery').length == 2){
-            if (this.type == 'imageryIon'){
+    this.getOpacity = function () {
+        if (this.type.split('imagery').length == 2) {
+            if (this.type == 'imageryIon') {
                 return this.data.alpha;
             } else {
                 // get imagery provider id
                 var imageryId = -1;
-                for(var i = 0 ; i < viewer.imageryLayers._layers.length ; i++){
-                    if(viewer.imageryLayers._layers[i].imageryProvider == this.data){
+                for (var i = 0; i < viewer.imageryLayers._layers.length; i++) {
+                    if (viewer.imageryLayers._layers[i].imageryProvider == this.data) {
                         imageryId = i;
                     }
                 }
@@ -607,10 +656,10 @@ function Val3DLayer (cfg){
                 return viewer.imageryLayers._layers[imageryId].alpha;
             }
         }
-        
-        if (this.type.split('vect').length == 2){
+
+        if (this.type.split('vect').length == 2) {
             return this.data.alpha;
         }
     }
-    
+
 }

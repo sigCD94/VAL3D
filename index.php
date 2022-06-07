@@ -20,7 +20,7 @@ if ( !isset($_SESSION['user_group']) ){
   <script src="./lib/cesiumjs/Build/Cesium/Cesium.js"></script>
   <link href="./lib/cesiumjs/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <!-- Include the geoserver terrain provider plugin -->
-  <script src="./lib/Cesium-GeoserverTerrainProvider/GeoserverterrainProvider.js"></script>
+  <!-- <script src="./lib/Cesium-GeoserverTerrainProvider/GeoserverTerrainProvider.js"></script> -->
   <!-- Include the proj4 JavaScript file -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js" integrity="sha512-MMmVaQGDVI3Wouc5zT5G7k/snN9gPqquIhZsHgIIHVDlRgYTYGxrwu6w482iIhAq8n5R6+pcBgpGgxFFBz7rZA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <!-- MON CSS -->
