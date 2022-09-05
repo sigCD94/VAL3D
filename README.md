@@ -27,7 +27,7 @@ Voici la liste des documentations utiles :
 
 [Guide de configuration](./CONFIGURATION.md)
 
-[Guide d'utilisation](./UTILISATION.md)
+[Guide d'utilisation](./USERGUIDE_VAL3D.pdf)
 
 ## Crédits
 __Développement: Jules Pierrat__
